@@ -6,16 +6,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Adiacenza;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
 
 public class PremierLeagueDAO {
 	
-	public List<Player> listAllPlayers(){
+	public void listAllPlayers(Map <Integer, Player> idMap){
 		String sql = "SELECT * FROM Players";
-		List<Player> result = new ArrayList<Player>();
+	
 		Connection conn = DBConnect.getConnection();
 
 		try {
@@ -24,14 +27,14 @@ public class PremierLeagueDAO {
 			while (res.next()) {
 
 				Player player = new Player(res.getInt("PlayerID"), res.getString("Name"));
-				result.add(player);
+				idMap.put(player.getPlayerID(), player);
 			}
 			conn.close();
-			return result;
+			
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+			
 		}
 	}
 	
@@ -85,7 +88,8 @@ public class PremierLeagueDAO {
 	public List<Match> listAllMatches(){
 		String sql = "SELECT m.MatchID, m.TeamHomeID, m.TeamAwayID, m.teamHomeFormation, m.teamAwayFormation, m.resultOfTeamHome, m.date, t1.Name, t2.Name   "
 				+ "FROM Matches m, Teams t1, Teams t2 "
-				+ "WHERE m.TeamHomeID = t1.TeamID AND m.TeamAwayID = t2.TeamID";
+				+ "WHERE m.TeamHomeID = t1.TeamID AND m.TeamAwayID = t2.TeamID "
+				+  "ORDER BY MatchID ASC ";
 		List<Match> result = new ArrayList<Match>();
 		Connection conn = DBConnect.getConnection();
 
@@ -104,6 +108,97 @@ public class PremierLeagueDAO {
 			}
 			conn.close();
 			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List <Player> getVertici (Map <Integer, Player> idMap, Match m){
+		String sql = "SELECT DISTINCT a.PlayerID AS id "
+				+ "FROM actions a "
+				+ "WHERE a.MatchID=?";
+	
+		Connection conn = DBConnect.getConnection();
+		List <Player> result= new ArrayList <Player>();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, m.getMatchID());
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				if(idMap.containsKey(res.getInt("id"))) {
+					Player p= idMap.get(res.getInt("id"));
+					result.add(p);
+				}
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List <Adiacenza> getAdiacenze (Map <Integer, Player> idMap, Match m){
+		String sql = "SELECT DISTINCT a1.PlayerID AS p1, a2.PlayerID AS p2, ((a1.TotalSuccessfulPassesAll+ a1.Assists)/ a1.TimePlayed) AS peso1, ((a2.TotalSuccessfulPassesAll+ a2.Assists)/ a2.TimePlayed) AS peso2 "
+				+ "FROM actions a1, actions a2 "
+				+ "WHERE a1.MatchID=? AND a1.MatchID=a2.MatchID AND a1.TeamID<>a2.TeamID "
+				+ "AND a1.PlayerID> a2.PlayerID "
+				+ "GROUP BY a1.PlayerID, a2.PlayerID";
+	
+		Connection conn = DBConnect.getConnection();
+		List <Adiacenza> result= new ArrayList <Adiacenza>();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, m.getMatchID());
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				double peso1= res.getDouble("peso1");
+				double peso2=res.getDouble("peso2");
+				Player p1 =idMap.get(res.getInt("p1"));
+				Player p2= idMap.get(res.getInt("p2"));
+				if(p1!=null && p2!=null) {
+				if((peso1-peso2)>=0) {
+					Adiacenza a= new Adiacenza(p1,p2, (peso1-peso2));
+					result.add(a);
+				}
+				else {
+					Adiacenza a= new Adiacenza(p2,p1, (peso2-peso1));
+					result.add(a);
+				}
+				}
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public Team getSquadraMigliore (Player migliore){
+		String sql = "SELECT DISTINCT a.TeamID, a.PlayerID, t.Name "
+				+ "FROM actions a, teams t "
+				+ "WHERE a.PlayerID=? AND a.TeamID=t.TeamID";
+	
+		Connection conn = DBConnect.getConnection();
+		List <Adiacenza> result= new ArrayList <Adiacenza>();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1,migliore.getPlayerID());
+			ResultSet res = st.executeQuery();
+			Team mig=null;
+			while (res.next()) {
+
+				mig= new Team(res.getInt("TeamID"), res.getString("Name"));
+			}
+			conn.close();
+			return mig;
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
