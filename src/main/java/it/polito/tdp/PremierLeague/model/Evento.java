@@ -1,21 +1,18 @@
 package it.polito.tdp.PremierLeague.model;
 
-public class Event implements Comparable <Event> {
-	
-	
+public class Evento {
 	public enum EventType{
 		GOAL,
 		ESPULSIONE,
 		INFORTUNIO,
-		
 	}
 	
 	private EventType tipo;
-	private int t;
-	public Event(EventType tipo, int t) {
+	private Integer squadra;
+	public Evento(EventType tipo, Integer squadra) {
 		super();
 		this.tipo = tipo;
-		this.t = t;
+		this.squadra = squadra;
 	}
 	public EventType getTipo() {
 		return tipo;
@@ -23,19 +20,12 @@ public class Event implements Comparable <Event> {
 	public void setTipo(EventType tipo) {
 		this.tipo = tipo;
 	}
-	public int getT() {
-		return t;
+	public Integer getSquadra() {
+		return squadra;
 	}
-	public void setT(int t) {
-		this.t = t;
+	public void setSquadra(Integer squadra) {
+		this.squadra = squadra;
 	}
-	@Override
-	public int compareTo(Event o) {
-		
-		return this.t-o.t;
-	}
-	
-	
 	
 	
 }

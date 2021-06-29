@@ -8,9 +8,10 @@ package it.polito.tdp.PremierLeague;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.PremierLeague.model.GiocatoreMigliore;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Model;
-import it.polito.tdp.PremierLeague.model.Simulator;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -46,56 +47,48 @@ public class FXMLController {
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
-	private Simulator sim;
+	
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-    	txtResult.clear();
+    	this.txtResult.clear();
     	Match m= this.cmbMatch.getValue();
     	if(m==null) {
-    		this.txtResult.setText("ATTENTO, SELEZIONA IL MATCH!");
+    		this.txtResult.setText("Seleziona un match");
     		return;
     	}
     	this.model.creaGrafo(m);
-    	this.txtResult.appendText("GRAFO CREATO!" +"\n");
-    	this.txtResult.appendText("#VERTICI: "+this.model.getVertici()+"\n");
-    	this.txtResult.appendText("#ARCHI: "+this.model.getArchi()+"\n");
+    	this.txtResult.appendText("Creazione grafo...\n");
+    	this.txtResult.appendText("#VERTICI: "+this.model.getNVertici()+"\n");
+    	this.txtResult.appendText("#ARCHI: "+this.model.getNArchi()+"\n");
+
     }
 
     @FXML
     void doGiocatoreMigliore(ActionEvent event) {    	
     	this.txtResult.clear();
-    	if(model.getGrafo()==null) {
-    		this.txtResult.appendText("CREA PRIMA IL GRAFO!");
+    	if(this.model.getGrafo()==null) {
+    		this.txtResult.setText("Crea prima il grafo");
     		return;
     	}
-    	this.txtResult.appendText(this.model.calcolaGiocatoreMigliore());
+    	GiocatoreMigliore gm= model.trovaMigliore();
+    	this.txtResult.appendText(gm.toString());
+    	
     }
     
     @FXML
     void doSimula(ActionEvent event) {
     	this.txtResult.clear();
-    	if(this.model.getGrafo() == null) {
-    		this.txtResult.setText("Crea prima il grafo!");
-    		return;
-    	}
-    
-	    	String Ns = this.txtN.getText();
-	    	Match m = this.cmbMatch.getValue();
-    	
-    	int N;
+    	String NS= this.txtN.getText();
+    	Integer n;
     	try {
-    		N = Integer.parseInt(Ns);		
-    	}
-    	catch(NumberFormatException nfe) {
-    		this.txtResult.setText("Inserire un numero");
+    		n=Integer.parseInt(NS);
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserisci un numero valido");
     		return;
     	}
-    	this.sim.init(N, m);
-		this.sim.run();
-    	this.txtResult.appendText("\n\n"+m.getTeamHomeNAME()+" "+this.sim.getGoalCasa()+"-"+this.sim.getGoalOspite()+" "+m.getTeamAwayNAME());
-		this.txtResult.appendText("\nEspulsioni "+m.getTeamHomeNAME()+": "+this.sim.getEspulsiC());
-		this.txtResult.appendText("\nEspulsioni "+m.getTeamAwayNAME()+": "+this.sim.getEspulsiO());
+    	Match m= this.cmbMatch.getValue();
+    	this.txtResult.appendText(model.simula(n, m));
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -111,7 +104,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
-    	this.cmbMatch.getItems().addAll(this.model.listAllMatches());
-    	this.sim = new Simulator(model);
+    	this.cmbMatch.getItems().addAll(model.listAllMatches());
     }
 }
